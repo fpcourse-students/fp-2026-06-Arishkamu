@@ -24,9 +24,10 @@ toChurch n
 fromChurch :: Church -> Integer
 fromChurch (Church n) = n (+ 1) 0
 
-todoImpl ''Show ''Church
-todoImpl ''Eq ''Church
-
+instance Show Church where
+  show n = "Church " ++ show (fromChurch n)
+instance Eq Church where
+  n == m = fromChurch n == fromChurch m
 
 -- 3.2. Арифметика и перечисление чисел Чёрча.
 -- Реализуйте Enum и Num. pred 0 == 0, вычитание насыщается нулём,
@@ -42,6 +43,15 @@ todoImpl ''Eq ''Church
 
 todoImpl ''Enum ''Church
 todoImpl ''Num ''Church
+{-
+instance Enum Church where
+  toEnum   = toChurch
+  fromEnum = fromInteger . fromChurch
+
+instance Num Church where
+  (Church n) + m = n (+ m) 0
+  (Church n) * m = n (* m) 0
+-}
 
 from4To14 :: [Church]
 from4To14 = todo "3.2 range"
