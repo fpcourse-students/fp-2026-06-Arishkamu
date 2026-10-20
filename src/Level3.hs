@@ -41,20 +41,23 @@ instance Eq Church where
 -- всем законам Num. Не переносите его в код, ожидающий кольцо.
 -- Напишите список [4,6,8,10,12,14] с помощью синтаксиса Enum и Num.
 
-todoImpl ''Enum ''Church
-todoImpl ''Num ''Church
-{-
+
 instance Enum Church where
-  toEnum   = toChurch
+  pred (Church n) = fst $ n (\(_, y) -> (y, succ y)) (toChurch 0, toChurch 0)
+  toEnum   = toChurch . toInteger
   fromEnum = fromInteger . fromChurch
 
 instance Num Church where
-  (Church n) + m = n (+ m) 0
-  (Church n) * m = n (* m) 0
--}
+  (Church n) + (Church m) = Church $ \s z -> m s (n s z)
+  (Church n) * m = n (+ m) (Church $ \_ z -> z)
+  n - (Church m) = m pred n
+  abs = id
+  signum (Church n) = if (n (\_ -> False) True) then 0 else 1
+  fromInteger = toChurch
+
 
 from4To14 :: [Church]
-from4To14 = todo "3.2 range"
+from4To14 = enumFromThenTo (fromInteger 4) (fromInteger 6) (fromInteger 14)
 
 
 -- 3.3. Явный словарь Functor.
@@ -68,10 +71,20 @@ newtype MyFunctor f = MkMyFunctor
   { myFmap :: forall a b. (a -> b) -> f a -> f b }
 
 myListFmap :: MyFunctor []
-myListFmap = todo "3.3 list"
+myListFmap = MkMyFunctor
+  { myFmap = \f xs ->
+    case xs of
+      [] -> []
+      (y:ys) -> f y : myFmap myListFmap f ys
+  }
 
 myMaybeFmap :: MyFunctor Maybe
-myMaybeFmap = todo "3.3 maybe"
+myMaybeFmap = MkMyFunctor
+  { myFmap = \f mb ->
+    case mb of
+      Nothing -> Nothing
+      Just y  -> Just (f y)
+  }
 
 case1 :: [Int]
 case1 = myFmap myListFmap (^ (2 :: Int)) [1 .. 10]
@@ -86,4 +99,4 @@ case4 :: ([Int], [String])
 case4 = go myListFmap
   where
     go :: MyFunctor [] -> ([Int], [String])
-    go = todo "3.3 two types"
+    go lf = (myFmap lf (^ (2 :: Int)) [1..10], myFmap lf ("y" ++) ["a"])
